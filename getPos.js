@@ -1,12 +1,4 @@
 $(document).ready(function(){
-  function attachMessage(marker, msg) {
-    google.maps.event.addListener(marker, "click", function(event) {
-      new google.maps.InfoWindow({
-        content: msg
-      }).open(marker.getMap(), marker);
-    });
-  }
-
 
   var map = new google.maps.Map(document.getElementById("map"), {
     zoom: 7,
@@ -36,15 +28,15 @@ $(document).ready(function(){
     } else if (status == google.maps.DirectionsStatus.NOT_FOUND) {
       alert("DirectionsRequestのorigin,destination,waypointsのいずれかのジオコーディングに失敗！");
     } else if (status == google.maps.ElevationStatus.OVER_QUERY_LIMIT) {
-      alert("短時間にDirectionsRequestクエリを送りすぎ！落ち着いて！！");
+      alert("短時間にDirectionsRequestクエリを送りすぎ！");
     } else if (status == google.maps.ElevationStatus.REQUEST_DENIED) {
-      alert("このページでは DirectionsRequest の利用が許可されていない！・・・なぜ！？");
+      alert("このページでは DirectionsRequest の利用が許可されていない！");
     } else if (status == google.maps.ElevationStatus.UNKNOWN_ERROR) {
       alert("DirectionsServiceで原因不明のなんらかのトラブルが発生した模様。");
     } else if (status == google.maps.ElevationStatus.ZERO_RESULTS) {
       alert("DirectionsServiceでorigin,destinationを結ぶ経路が見つかりません。");
     } else {
-      alert("えぇ～っと・・、DirectionsService バージョンアップ？");
+      alert("DirectionsService バージョンアップ？");
     }
   });
 });
