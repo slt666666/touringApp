@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title></title>
+		<link rel="stylesheet" href="leaflet/leaflet.css">
+		<style>
+			.leaflet-container {
+				cursor: default;
+			}
+			#map {
+				width: 840px;
+				height: 660px;
+				margin: 40px auto;
+				border: 1px solid #CECDD2;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="map"></div>
+		<script src="leaflet/leaflet.js"></script>
+
+		<script>
+
+			var map = L.map("map", {
+				center: [36.3, -80.2],
+				maxBounds: [ [33.32134852669881, -85.20996093749999], [39.16414104768742, -75.9814453125] ],
+				zoom: 6,
+				minZoom: 6,
+				maxZoom: 6,
+				dragging: false,
+				zoomControl: false,
+				touchZoom: false,
+				scrollWheelZoom: false,
+				doubleClickZoom: false,
+				boxZoom: false,
+				keyboard: false
+			});
+
+			L.tileLayer("http://server.arcgisonline.com/ArcGIS/rest/services/"+"Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {attribution: "Tiles &copy; Esri &mdash; Esri, Delorme, NAVTEQ", maxZom: 16
+			}).addTo(map);
+
+		</script>
+	</body>
+</html>
