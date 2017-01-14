@@ -76,6 +76,7 @@ L.polyline(
 
 // アニメーションコントロール
 L.Control.Animate = L.Control.extend({
+  // オプションの定義
   options: {
     position: "topleft",
     animateStartText: "▶︎",
@@ -113,8 +114,8 @@ L.Control.Animate = L.Control.extend({
       link.href = "#",
       link.title = title;
 
-    // mousedown,dblclick無視
-    // クリックがドキュメントツリーの上位に伝播させない
+    // mousedown,dblclick無視　・・・APIよくわからない
+    // クリックがドキュメントツリーの上位に伝播させない　・・・APIよくわからない
     // clickイベントに対するコールバック関数実行
     L.DomEvent
       .on(link, "mousedown dblclick", L.DomEvent.stopPropagation)
@@ -166,7 +167,7 @@ var buildAnimation = function(route, options){
 
   // 多角線を作成するコード
   for (var stopIdx=0, prevStops=[]; stopIdx < route.length-1; stopIdx++){
-    // 現在の停車位置と次の停車位置間のステップ数を計算する
+    // 現在の停車位置と次の停車位置間のステップを計算する
     var stop = route[stopIdx];
     var nextStop = route[stopIdx+1]
     prevStops.push([stop.latitude, stop.longitude]);
@@ -195,6 +196,7 @@ var routeAnimations = [
   )
 ];
 
+// ステップの最大値(配列の長さの最小値)
 var maxSteps = Math.min.apply(null,
   routeAnimations.map(function(animation){
     return animation.length
@@ -205,23 +207,33 @@ var step = 0;
 
 var animateStep = function() {
   // アニメーションの次のステップを描画する
+
+  // 最初のステップじゃない時、先ほどのステップの線を消す
   if (step > 0){
     routeAnimations.forEach(function(animation){
       map.removeLayer(animation[step-1]);
     });
   }
+
+  // 最後のステップの場合、最初に戻る
   if (step === maxSteps) {
     step = 0;
   }
+
+  // 現在のステップの線を描く
   routeAnimations.forEach(function(animation){
     map.addLayer(animation[step]);
   })
 
+  // アニメーションの最後に達せばtrueを返す
   return ++step === maxSteps;
 }
 
+// 上記のステップ関数を繰り返し実行
 var interval = null;
+
 var animate = function(){
+  // アニメーションが最後に達していたらインターバルを削除し、コントロールリセット
   interval = window.setInterval(function(){
     if (animateStep()){
       window.clearInterval(interval);
@@ -229,11 +241,16 @@ var animate = function(){
     }
   }, 30);
 }
+
+// インターバルを停止する
 var pause = function(){
   window.clearInterval(interval);
 }
+
+// コントロールオブジェクト作成
 var control = L.control.animate({
   animateStartFn: animate,
   animateStopFn: pause
 });
+
 control.addTo(map);
