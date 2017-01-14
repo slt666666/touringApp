@@ -40,9 +40,9 @@ var southern = [
 var map = L.map("map", {
   center: [36.3, -80.2],
   maxBounds: [ [33.32134852669881, -85.20996093749999], [39.16414104768742, -75.9814453125] ],
-  zoom: 6,
-  minZoom: 6,
-  maxZoom: 6,
+  zoom: 7,
+  minZoom: 7,
+  maxZoom: 7,
   dragging: false,
   zoomControl: false,
   touchZoom: false,
@@ -203,144 +203,13 @@ var maxSteps = Math.min.apply(null,
   })
 );
 
-//ラベルオブジェクトを作成する
-L.Label = L.Class.extend({
-
-  // LeafletのClassのinitialize()メソッド拡張
-  initialize: function(latLng, label, options){
-    this._latlng = latLng;
-    this._label = label;
-    L.Util.setOptions(this, options);
-    this._status = "hidden";
-  },
-
-  // initializeメソッド内のL.Util.setOptions呼び出しと組み合わせ
-  // Labelオブジェクト作成時に簡単にオーバーライドできるオフセットのデフォルト値指定
-  options: {
-    offset: new L.Point(0, 0)
-  },
-
-  onAdd: function(map){
-    // leaflet-labelクラスを持つdiv要素作成
-    this._container = L.DomUtil.create("div", "leaflet-label");
-    // そのdiv要素のlineHeightを0にし、位置計算での不測事態回避
-    this._container.style.lineHeight = "0";
-    // そのdiv要素のopacityを0にし、初期状態hiddenにあわせる
-    this._container.style.opacity = "0";
-    // この要素をmarkerPaneレイヤに追加・・・Paneがよくわからん
-    map.getPanes().markerPane.appendChild(this._container);
-    // ラベルテキスト設定
-    this._container.innerHTML = this._label;
-    // 緯度経度からラベルの位置を計算し、オフセット調整
-    var position = map.latLngToLayerPoint(this._latlng);
-    var op = new L.Point(
-      position.x + this.options.offset.x,
-      position.y + this.options.offset.y
-    );
-    //この要素を地図上に配置
-    L.DomUtil.setPosition(this._container, op);
-  },
-
-  // ラベルの取得と設定
-  getStatus: function(){
-    return this._status;
-  },
-  setStatus: function(status){
-    switch (status) {
-      case "hidden":
-        this._status = "hidden";
-        this._container.style.opacity = "0";
-        break;
-      case "shown":
-        this._status = "shown";
-        this._container.style.opacity = "1";
-        break;
-      case "dimmed":
-        this._status = "dimmed";
-        this._container.style.opacity = "0.5";
-        break;
-    }
-  }
-});
-
-var buildLabelAnimation = function(){
-  var args = Array.prototype.slice.call(arguments),
-      labels = [];
-
-  // ラベルアニメーション値を求める
-  args.forEach(function(route){
-    var minutes = 0;
-
-    // 各停止位置を処理
-    route.forEach(function(stop, idx){
-        //最初か最後にはラベルはアニメーションしない
-        if (idx !== 0 && idx < route.length-1){
-          // Labelオブジェクト作成
-          var label = new L.Label(
-            [stop.latitude, stop.longitude],
-            stop.stop,
-            {offset: new L.Point(stop.offset[0], stop.offset[1])}
-          );
-          map.addLayer(label);
-          // 到達時はshownとして追加
-          labels.push(
-            {minutes: minutes, label: label, status: "shown"}
-          );
-          // 通過後はdimmedとして追加
-          labels.push(
-            {minutes: minutes+50, label: label, status: "dimmed"}
-          );
-        }
-        minutes += stop.duration;
-    });
-  });
-  // 配列を時間の順でソート
-  labels.sort(function(a,b){return a.minutes - b.minutes;})
-
-  return labels;
-}
-
-// 各線をラベル化
-var labels = buildLabelAnimation(seaboard, southern);
-
-//最初と最後は最初から表示
-var start = seaboard[0];
-var label = new L.Label(
-  [start.latitude, start.longitude],
-  start.stop,
-  {offset: new L.Point(start.offset[0], start.offset[1])}
-);
-map.addLayer(label);
-label.setStatus("shown");
-
-var finish = seaboard[seaboard.length-1];
-var label = new L.Label(
-  [finish.latitude, finish.longitude],
-  finish.stop,
-  {offset: new L.Point(finish.offset[0], finish.offset[1])}
-);
-map.addLayer(label);
-label.setStatus("shown");
-
-
-var maxPathSteps = Math.min.apply(null,
-  routeAnimations.map(function(animation){
-    return animation.length
-  })
-);
-var maxLabelSteps = labels[labels.length-1].minutes;
-var maxSteps = Math.max(maxPathSteps, maxLabelSteps);
-
-// 
-var labelAnimation = labels.slice(0);
-
 var step = 0;
 
 var animateStep = function() {
   // アニメーションの次のステップを描画する
 
   // 最初のステップじゃない時、先ほどのステップの線を消す
-  if (step > 0 && step < maxPathSteps){
+  if (step > 0){
     routeAnimations.forEach(function(animation){
       map.removeLayer(animation[step-1]);
     });
@@ -348,30 +217,13 @@ var animateStep = function() {
 
   // 最後のステップの場合、最初に戻る
   if (step === maxSteps) {
-    routeAnimations.forEach(function(animation){
-      map.removeLayer(animation[maxPathSteps-1]);
-    });
-    labelAnimation = labels.slice(0);
-    labelAnimation.forEach(function(label){
-      label.label.setStatus("hidden");
-    });
     step = 0;
   }
 
-  while (labelAnimation.length && step === labelAnimation[0].minutes){
-    var label = labelAnimation[0].label;
-    if (step < maxPathSteps || label.getStatus() === "shown"){
-      label.setStatus(labelAnimation[0].status);
-    }
-    labelAnimation.shift();
-  }
-
   // 現在のステップの線を描く
-  if (step < maxPathSteps){
-    routeAnimations.forEach(function(animation){
-      map.addLayer(animation[step]);
-    });
-  }
+  routeAnimations.forEach(function(animation){
+    map.addLayer(animation[step]);
+  })
 
   // アニメーションの最後に達せばtrueを返す
   return ++step === maxSteps;
