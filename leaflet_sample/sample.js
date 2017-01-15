@@ -40,9 +40,9 @@ var southern = [
 var map = L.map("map", {
   center: [36.3, -80.2],
   maxBounds: [ [33.32134852669881, -85.20996093749999], [39.16414104768742, -75.9814453125] ],
-  zoom: 6,
-  minZoom: 6,
-  maxZoom: 6,
+  zoom: 7,
+  minZoom: 7,
+  maxZoom: 7,
   dragging: false,
   zoomControl: false,
   touchZoom: false,
@@ -196,13 +196,6 @@ var routeAnimations = [
   )
 ];
 
-// ステップの最大値(配列の長さの最小値)
-var maxSteps = Math.min.apply(null,
-  routeAnimations.map(function(animation){
-    return animation.length
-  })
-);
-
 //ラベルオブジェクトを作成する
 L.Label = L.Class.extend({
 
@@ -322,16 +315,17 @@ var label = new L.Label(
 map.addLayer(label);
 label.setStatus("shown");
 
-
+// 線描写アニメのステップ総数を求める
 var maxPathSteps = Math.min.apply(null,
   routeAnimations.map(function(animation){
     return animation.length
   })
 );
+// ラベルのアニメーションが最後に起動するminutes
 var maxLabelSteps = labels[labels.length-1].minutes;
+// アニメーションステップのMax
 var maxSteps = Math.max(maxPathSteps, maxLabelSteps);
-
-// 
+// 元のデータを保持しつつ、アニメーション中の破棄を行う用に配列コピー
 var labelAnimation = labels.slice(0);
 
 var step = 0;
@@ -358,9 +352,11 @@ var animateStep = function() {
     step = 0;
   }
 
+  // 配列に最初の要素がある時、minutesに応じてラベル作成orStatus変更
   while (labelAnimation.length && step === labelAnimation[0].minutes){
     var label = labelAnimation[0].label;
     if (step < maxPathSteps || label.getStatus() === "shown"){
+      // ここでlabelのopacityを変更
       label.setStatus(labelAnimation[0].status);
     }
     labelAnimation.shift();
@@ -402,3 +398,28 @@ var control = L.control.animate({
 });
 
 control.addTo(map);
+
+
+// タイトル追加
+L.Control.Title = L.Control.extend({
+  options: {
+    position: "topleft"
+  },
+
+  initialize: function(title, options){
+    L.setOptions(this, options);
+    this._title = title;
+  },
+
+  onAdd: function(map){
+    var container = L.DomUtil.create("div", "leaflet-control-title");
+    container.innerHTML = this._title;
+    return container;
+  }
+});
+
+L.control.title = function(title, options){
+  return new L.Control.Title(title, options);
+};
+
+L.control.title("Geography as a Competitive Advantage").addTo(map);
