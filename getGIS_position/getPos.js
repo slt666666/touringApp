@@ -11,6 +11,7 @@ $(document).ready(function(){
   var points = [];
 	var waypts = [];
 	var markers = [];
+	var routeDisplay = new google.maps.DirectionsRenderer();
 	//clickイベントを取得するListener追加
 	google.maps.event.addListener(map, 'click', clickEventFunc);
 
@@ -58,7 +59,8 @@ $(document).ready(function(){
 	      routeDisplay = new google.maps.DirectionsRenderer({
 	      	map: map,
 	        suppressMarkers: true
-	      }).setDirections(result);
+	      });
+				routeDisplay.setDirections(result);
 
 	    } else if (status == google.maps.DirectionsStatus.INVALID_REQUEST) {
 	    		alert("DirectionsRequestに問題アリ！渡している内容を確認せよ！！");
@@ -82,11 +84,15 @@ $(document).ready(function(){
 
 	//リセット
 	$('#reset').click(function(){
+		//描写物削除
 		marker.setMap(null);
 		for (var i = 0; i < markers.length; i++){
 			markers[i].setMap(null);
 		}
 		markers = [];
 		points = [];
+		routeDisplay.setMap(null);
+		//ログ消去
+		$('#log').empty();
 	});
 });
