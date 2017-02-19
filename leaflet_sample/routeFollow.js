@@ -21,22 +21,6 @@ var seaboard = [
     { "stop": "Atlanta",        "latitude": 33.755,    "longitude": -84.39,     "duration":   0, "offset": [-21, 10] }
 ];
 
-var southern = [
-    { "stop": "Washington",      "latitude": 38.895111, "longitude": -77.036667, "duration":  14, "offset": [-30,-10] },
-    { "stop": "Alexandria",      "latitude": 38.804722, "longitude": -77.047222, "duration": 116, "offset": [  4,  4] },
-    { "stop": "Charlottesville", "latitude": 38.0299,   "longitude": -78.479,    "duration":  77, "offset": [-85,  0] },
-    { "stop": "Lynchburg",       "latitude": 37.403672, "longitude": -79.170205, "duration":  71, "offset": [-62,  0] },
-    { "stop": "Danville",        "latitude": 36.587238, "longitude": -79.404404, "duration":  64, "offset": [-48, -1] },
-    { "stop": "Greensboro",      "latitude": 36.08,     "longitude": -79.819444, "duration":  18, "offset": [-69, -4] },
-    { "stop": "High Point",      "latitude": 35.970556, "longitude": -79.9975,   "duration":  47, "offset": [  5,  7] },
-    { "stop": "Salisbury",       "latitude": 35.668333, "longitude": -80.478611, "duration":  50, "offset": [-57,  0] },
-    { "stop": "Charlotte",       "latitude": 35.226944, "longitude": -80.843333, "duration":  25, "offset": [  8,  0] },
-    { "stop": "Gastonia",        "latitude": 35.255278, "longitude": -81.180278, "duration":  63, "offset": [-26,-10] },
-    { "stop": "Spartanburg",     "latitude": 34.946667, "longitude": -81.9275,   "duration":  43, "offset": [-80, -7] },
-    { "stop": "Greenville",      "latitude": 34.844444, "longitude": -82.385556, "duration": 187, "offset": [-70,  2] },
-    { "stop": "Atlanta",         "latitude": 33.755,    "longitude": -84.39,     "duration":   0, "offset": [-21, 10] }
-];
-
 var map = L.map("map", {
   center: [36.3, -80.2],
   maxBounds: [ [33.32134852669881, -85.20996093749999], [39.16414104768742, -75.9814453125] ],
@@ -67,12 +51,6 @@ L.polyline(
   seaboard.map(function(stop){return [stop.latitude, stop.longitude]}),
   {color: "#106624", weight: 1, clickable: false}
 ).addTo(map);
-
-L.polyline(
-  southern.map(function(stop){return [stop.latitude, stop.longitude]}),
-  {color: "#106634", weight: 1, clockable: false}
-).addTo(map);
-
 
 // アニメーションコントロール
 L.Control.Animate = L.Control.extend({
@@ -161,7 +139,6 @@ L.control.animate = function(options){
 // Leaflet構文でコントロールを作成
 //L.control.animate().addTo(map);
 
-
 var buildAnimation = function(route, options){
   var animation = [];
 
@@ -186,15 +163,9 @@ var buildAnimation = function(route, options){
   return animation;
 }
 
-// 二つの路線を格納する配列
-var routeAnimations = [
-  buildAnimation(seaboard,
-    {clickable: false, color: "#88020B", weight: 8, opacity: 1.0}
-  ),
-  buildAnimation(southern,
-    {clickable: false, color: "#106634", weight: 8, opacity: 1.0}
-  )
-];
+// 路線を格納する配列
+var routeAnimation = buildAnimation(seaboard,
+    {clickable: false, color: "#88020B", weight: 8, opacity: 1.0})
 
 //ラベルオブジェクトを作成する
 L.Label = L.Class.extend({
@@ -217,13 +188,13 @@ L.Label = L.Class.extend({
     // leaflet-labelクラスを持つdiv要素作成
     this._container = L.DomUtil.create("div", "leaflet-label");
     // そのdiv要素のlineHeightを0にし、位置計算での不測事態回避
-    this._container.style.lineHeight = "0";
+    this._container.style.height = "0";
     // そのdiv要素のopacityを0にし、初期状態hiddenにあわせる
     this._container.style.opacity = "0";
     // この要素をmarkerPaneレイヤに追加・・・Paneがよくわからん
     map.getPanes().markerPane.appendChild(this._container);
     // ラベルテキスト設定
-    this._container.innerHTML = this._label;
+    this._container.innerHTML = "<img src ='http://www.d3.dion.ne.jp/~tiyoko01/hyo/twin.jpg'>";
     // 緯度経度からラベルの位置を計算し、オフセット調整
     var position = map.latLngToLayerPoint(this._latlng);
     var op = new L.Point(
@@ -252,6 +223,9 @@ L.Label = L.Class.extend({
         this._status = "dimmed";
         this._container.style.opacity = "0.5";
         break;
+      case "vanished":
+        this._status = "vanished";
+        this._container.style.opacity = "0";
     }
   }
 });
@@ -281,7 +255,11 @@ var buildLabelAnimation = function(){
           );
           // 通過後はdimmedとして追加
           labels.push(
-            {minutes: minutes+50, label: label, status: "dimmed"}
+            {minutes: minutes+25, label: label, status: "dimmed"}
+          );
+          // そして消える
+          labels.push(
+            {minutes: minutes+50, label: label, status: "vanished"}
           );
         }
         minutes += stop.duration;
@@ -294,7 +272,7 @@ var buildLabelAnimation = function(){
 }
 
 // 各線をラベル化
-var labels = buildLabelAnimation(seaboard, southern);
+var labels = buildLabelAnimation(seaboard);
 
 //最初と最後は最初から表示
 var start = seaboard[0];
@@ -316,18 +294,13 @@ map.addLayer(label);
 label.setStatus("shown");
 
 // 線描写アニメのステップ総数を求める
-var maxPathSteps = Math.min.apply(null,
-  routeAnimations.map(function(animation){
-    return animation.length
-  })
-);
+var maxPathSteps = routeAnimation.length;
 // ラベルのアニメーションが最後に起動するminutes
 var maxLabelSteps = labels[labels.length-1].minutes;
 // アニメーションステップのMax
 var maxSteps = Math.max(maxPathSteps, maxLabelSteps);
 // 元のデータを保持しつつ、アニメーション中の破棄を行う用に配列コピー
 var labelAnimation = labels.slice(0);
-console.log(labelAnimation);
 
 var step = 0;
 
@@ -336,16 +309,13 @@ var animateStep = function() {
 
   // 最初のステップじゃない時、先ほどのステップの線を消す
   if (step > 0 && step < maxPathSteps){
-    routeAnimations.forEach(function(animation){
-      map.removeLayer(animation[step-1]);
-    });
+      map.removeLayer(routeAnimation[step-1]);
   }
 
   // 最後のステップの場合、最初に戻る
   if (step === maxSteps) {
-    routeAnimations.forEach(function(animation){
-      map.removeLayer(animation[maxPathSteps-1]);
-    });
+      map.removeLayer(routeAnimation[maxPathSteps-1]);
+    };
     labelAnimation = labels.slice(0);
     labelAnimation.forEach(function(label){
       label.label.setStatus("hidden");
@@ -365,9 +335,7 @@ var animateStep = function() {
 
   // 現在のステップの線を描く
   if (step < maxPathSteps){
-    routeAnimations.forEach(function(animation){
-      map.addLayer(animation[step]);
-    });
+      map.addLayer(routeAnimation[step]);
   }
 
   // アニメーションの最後に達せばtrueを返す
