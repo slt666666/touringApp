@@ -91,6 +91,7 @@ $(document).ready(function(){
 		}
 		markers = [];
 		points = [];
+		waypts = [];
 		routeDisplay.setMap(null);
 		//ログ消去
 		$('#log').empty();
